@@ -1,55 +1,46 @@
-# Planta Norte | Examen práctico de Ingeniería de Software (4.º año)
+## Escenario
 
-Proyecto Android nativo en Kotlin: panel IIoT **de demostración**, con una pantalla híbrida XML + Jetpack Compose, MVVM, Retrofit, SQLite y sensores Android. El proyecto **contiene decisiones de diseño heredadas** y tiene dos funcionalidades que todavía no están terminadas.
+El equipo de software de una planta de fabricación necesita evolucionar un panel Android de monitoreo IIoT. Recibís una aplicación ya iniciada que ejecuta MVVM, se conecta a una API pública con Retrofit, conserva lecturas con SQLite, obtiene sensores del teléfono y mezcla componentes XML con Jetpack Compose.
 
-**Importante:** los equipos y las lecturas de fábrica son simulados. El canal público de ThingSpeak se utiliza exclusivamente para ejercitar el consumo de API: sus datos **no corresponden** a una instalación industrial real. En caso de fallo de red, la app sigue siendo utilizable con datos de prueba.
+Tu trabajo es continuar la base existente, **manteniendo la app operativa**. No reemplaces el proyecto entero por una solución nueva. Los equipos de la pantalla son simulados; la API se usa con fines académicos.
 
-## Requisitos de preparación (a cargo del docente, antes de la prueba)
+## Actividades obligatorias
 
-- Android Studio con Android SDK 35 instalado y JDK 17 (o superior compatible con Gradle 8.11.1).
-- Conexión a Internet **para descargar dependencias la primera vez**; después la app puede ejecutarse sin acceso a la API.
-- Emulador o dispositivo Android 8.0 / API 26 en adelante.
-- Generar el wrapper oficial de Gradle ejecutando **una vez** `./gradlew --version` (Linux/macOS) o `gradlew.bat --version` (Windows). Los scripts obtienen el `gradle-wrapper.jar` oficial de Gradle 8.11.1 y verifican su SHA-256 antes de usarlo. La distribución de Gradle también se descargará si no estaba en caché.
-- Abrir **esta carpeta** en Android Studio y esperar la sincronización Gradle. Iniciar en el emulador y comprobar las tres tarjetas.
+### 1. Umbral de alarma configurable y persistente (30 puntos)
 
-La descarga del wrapper se implementa en los scripts para no incluir un binario que no pueda verificarse durante la generación de este paquete. Para que los estudiantes no descarguen herramientas durante el examen, el docente debe **preparar, sincronizar y distribuir** el proyecto con `gradle/wrapper/gradle-wrapper.jar` ya generado (o proporcionar estaciones previamente configuradas).
+Actualmente el botón de umbral solo informa que la opción está pendiente. Implementá una interacción en Compose que permita definir un **umbral de temperatura en °C**:
 
-## Comportamiento ya implementado
+- Aceptá únicamente valores numéricos dentro de **30 a 120 °C** y mostrá un mensaje claro si el valor no es válido.
+- Guardá el umbral de manera persistente en **SQLite**, de modo que sobreviva al cierre y nueva apertura de la app.
+- Al guardarlo, actualizá **de inmediato** los estados NORMAL/ALERTA y el contador de alertas de la pantalla, sin necesitar sincronizar.
+- El valor inicial, en una instalación nueva, es **65 °C**. Una lectura alcanza el estado ALERTA cuando su temperatura es **mayor o igual** al umbral.
 
-1. Carga inicial de tres equipos desde SQLite; si la base está vacía, inserta lecturas de prueba.
-2. Botón **Sincronizar telemetría**: consulta Retrofit/ThingSpeak y persiste un nuevo lote de lecturas en SQLite. Si la red falla, inserta otro lote simulado.
-3. Buscador de equipos por nombre.
-4. Indicadores de temperatura, humedad, vibración, origen y estado de alerta.
-5. Sensores físicos del teléfono: luz ambiental y acelerómetro, cuando el dispositivo los ofrece.
-6. Cabecera y botón tradicionales XML; panel y tarjetas Compose integrados mediante `ComposeView`.
+### 2. Historial de telemetría por equipo (30 puntos)
 
-## Cómo explorar el código
+Actualmente **Ver historial** solo muestra un aviso. Implementá la consulta y presentación de un historial:
 
-```text
-app/src/main/java/ar/edu/examen/iiot/
-  MainActivity.kt                 # actividad XML y sensores Android
-  model/Reading.kt                # entidad de lectura y reglas existentes
-  data/ThingSpeakApi.kt           # Retrofit + DTO de API externa
-  data/PlantDatabase.kt           # SQLiteOpenHelper
-  data/PlantRepository.kt         # acceso a datos
-  ui/PlantViewModel.kt            # estado de pantalla
-  ui/DashboardScreen.kt           # tarjetas y controles Compose
-```
+- Al pulsar en un equipo, mostrá sus **últimas 10 lecturas** guardadas en SQLite, ordenadas desde la más reciente.
+- Cada registro debe mostrar al menos **fecha/hora, temperatura y origen**.
+- Permití cerrar el historial y volver al panel sin perder la búsqueda actual.
+- Si no existen registros, mostrá un estado vacío comprensible.
+- Después de sincronizar dos veces, las nuevas lecturas deben aparecer en el historial del equipo.
 
-Para conocer el trabajo evaluado, leer `CONSIGNA_ESTUDIANTE.md`.
+### 3. Refactorización y justificación (25 puntos)
 
-## Prueba de humo
+Identificá y mejorá **al menos dos problemas reales** que encuentres en el diseño, responsabilidades, seguridad, testabilidad o rendimiento. No alcanza con cambiar nombres, formato o colores. Preservá las funcionalidades ya existentes.
 
-- Ejecutar; deben verse Compresor A, Bomba B, Horno C y por lo menos una alerta.
-- Escribir `Bomba` en buscar; solo debe quedar la tarjeta correspondiente. Borrar para ver las tres.
-- Pulsar **Sincronizar** dos veces y comprobar el cambio de fecha/hora o de origen del Compresor A. Si hay red válida, la cabecera indicará ThingSpeak; si no, indicará simulación.
-- Pulsar **Umbral** y **Ver historial**: se muestra el aviso de funcionalidad pendiente, sin que la app se cierre.
-- En un emulador sin sensor de luz se mostrará “no disponible”, no un error.
+Incluí una explicación breve de cada decisión en `CAMBIOS.md`: qué problema encontraste, qué código modificaste y qué riesgo o costo resolvés.
 
-## Stack fijado para el ejercicio
+### 4. Validación y entrega (15 puntos)
 
-- Android Gradle Plugin 8.9.2 + Gradle 8.11.1 + Kotlin 2.1.20
-- Jetpack Compose BOM 2025.05.00, Material 3, Lifecycle/ViewModel
-- Retrofit 2.11.0 + Gson; SQLiteOpenHelper nativo
+- El proyecto debe compilar y ejecutar, sin errores al navegar o sincronizar sin red.
+- Debe conservar Retrofit, SQLite, el uso de sensores y la convivencia XML/Compose.
+- Agregá al menos **una evidencia reproducible** de validación: prueba automatizada, prueba manual con pasos y resultado, o ambas.
+- Entregá el proyecto y un archivo `CAMBIOS.md`. Se valorará código legible y coherente, no la cantidad de líneas.
 
-No contiene API keys, credenciales ni conexiones con maquinaria real.
+## Condiciones del examen
+
+- Se permite IA generativa, buscadores y documentación; sos responsable de verificar, adaptar y comprender lo que entregás.
+- No se requiere acceso a sensores industriales, credenciales ni hardware adicional; un emulador es suficiente.
+- No se califica el aspecto visual salvo que impida completar la funcionalidad.
+- No es necesario implementar login, notificaciones push, MQTT ni gráficos avanzados.
